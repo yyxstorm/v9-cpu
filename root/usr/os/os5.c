@@ -137,12 +137,29 @@ alltraps()
 
 setup_user_paging()
 {
-  //YOUR CODE: lec7-spoc challenge-part2
+  int i;
+  int *pgusr = pg_dir + 1024 * 17;
+  pg_dir[USRSTART >> 22] = (int)pgusr | PTE_P | PTE_W | PTE_U;
+  for (i = 0; i < 1024 ;i ++) pgusr[i] = (USRPHY + (i << 12)) | PTE_P | PTE_W | PTE_U;
 }
   
 setup_kernel_paging()
 {
-  //YOUR CODE: lec7-spoc challenge-part1
+  int i;
+  pg_dir = (int *)((((int)&pg_mem) + 4095) & -4096);
+  pg_tbl[0] = pg_dir+1024;
+  pg_dir[0x300] = (int)pg_tbl[0] | PTE_P | PTE_W ;
+  for (i = 1; i < 16; ++i){
+    pg_tbl[i] = pg_tbl[i-1] + 1024;
+  }
+
+  for (i = 0; i < 1024;i ++) pg_dir[i] = 0;
+  
+  for (i = 0; i < 16; ++i)
+    pg_dir[i+0x300] = (int)pg_tbl[i] | PTE_P | PTE_W ;
+
+  for (i=0;i<1024*16;i++) pg_tbl[0][i] = (i<<12) | PTE_P | PTE_W | PTE_U;  // trick to write all 4 contiguous pages
+  pg_dir[0] = pg_dir[0x300];
 }
 
 main()
